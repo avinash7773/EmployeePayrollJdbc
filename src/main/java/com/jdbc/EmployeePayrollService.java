@@ -5,24 +5,29 @@ import java.util.List;
 import java.util.Scanner;
 
 public class EmployeePayrollService {
-    public EmployeePayrollService() {
-
-    }
 
     public enum IOService {CONSOLE_IO, DB_IO, FILE_IO}
-        public List<EmployeePayRollData> employeePayrollList = new ArrayList<>();
 
-        public EmployeePayrollService(ArrayList<EmployeePayRollData> employeePayrollList) {
-        }
+    List<EmployeePayRollData> employeePayrollList;
+    private static EmployeePayrollDBService employeePayrollDBService;
 
-        public static void main(String[] args) {
-            System.out.println("Wel-Come to EmployeePayrollservice");
-            ArrayList<EmployeePayRollData> employeePayrollList = new ArrayList<EmployeePayRollData>();
-            EmployeePayrollService employeePayrollService = new EmployeePayrollService(employeePayrollList);
-            Scanner consoleInputReader = new Scanner(System.in);
-            employeePayrollService.readEmployeeData(consoleInputReader);
-            employeePayrollService.writeEmployeeData();
-        }
+    public EmployeePayrollService() {
+        employeePayrollDBService = EmployeePayrollDBService.getInstance();
+    }
+
+    public EmployeePayrollService(List<EmployeePayRollData> employeePayrollList) {
+        this();
+        this.employeePayrollList = employeePayrollList;
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Wel-Come to EmployeePayrollservice");
+        ArrayList<EmployeePayRollData> employeePayrollList = new ArrayList<EmployeePayRollData>();
+        EmployeePayrollService employeePayrollService = new EmployeePayrollService(employeePayrollList);
+        Scanner consoleInputReader = new Scanner(System.in);
+        employeePayrollService.readEmployeeData(consoleInputReader);
+        employeePayrollService.writeEmployeeData();
+    }
 
         /**
          * @readEmployeeData method is for read data from console
@@ -39,9 +44,28 @@ public class EmployeePayrollService {
 
     public List<EmployeePayRollData> readEmployeePayrollData(IOService ioService) {
         if (ioService.equals(ioService.DB_IO))
-            this.employeePayrollList = new EmployeePayrollDBService().readData();
+            this.employeePayrollList = employeePayrollDBService.readData();
         return this.employeePayrollList;
     }
+
+    public boolean checkEmployeePayrollSyncWithDB(String name) {
+            List<EmployeePayRollData> employeePayRollDataList = employeePayrollDBService.getEmployeePayrollData(name);
+            return  employeePayRollDataList.get(0).equals(getEmployeePayrollData(name));
+    }
+
+    public void updateEmployeeSalary(String name, double salary) {
+           int result = employeePayrollDBService.updateEmployeeData(name,salary);
+           if (result == 0) return;
+           EmployeePayRollData employeePayRollData = this.getEmployeePayrollData(name);
+           if (employeePayRollData != null)
+               employeePayRollData.salary = salary;
+        }
+
+    private EmployeePayRollData getEmployeePayrollData(String name) {
+            return employeePayrollList.stream()
+                    .filter(employeePayRollDataItem -> employeePayRollDataItem.name.equals(name))
+                    .findFirst().orElse(null);
+        }
 
     /**
      * @writeEmployeeData method is for writing the data
